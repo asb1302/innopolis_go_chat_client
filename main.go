@@ -65,9 +65,6 @@ func run(ctx context.Context) {
 	}
 	defer conn.Close()
 
-	// отдельную горутина на чтение всех сообщений из сервера
-	go readMessages(ctx, conn)
-
 	UID := chatdata.ID(uuid.New().String())
 
 	for {
@@ -86,6 +83,8 @@ func run(ctx context.Context) {
 			case "1":
 				createNewChat(conn, UID, ctx)
 			case "2":
+				// Запускаем горутину чтения только после того, как пользователь вошел в чат. Упрощённый пример.
+				go readMessages(ctx, conn)
 				enterChat(conn, UID, ctx)
 			case "exit":
 				fmt.Println("Выход из программы")
@@ -125,9 +124,11 @@ func readMessages(ctx context.Context, conn *websocket.Conn) {
 				continue
 			}
 
-			// сравниваем id чата в сообщении с текущим состоянием клиента
 			if chatdata.ID(respChID) == state.GetChatID() {
-				fmt.Printf("%s %s: %s\n", msgData["from_id"], time.Now().Format("02.01.2006 15:04"), msgData["body"])
+				fmt.Printf("%s %s: %s\n",
+					msgData["from_id"],
+					time.Now().Format("02.01.2006 15:04"),
+					msgData["body"])
 			}
 		}
 	}
